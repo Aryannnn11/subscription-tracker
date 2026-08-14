@@ -1,6 +1,8 @@
 # Subscription Tracker
 
-A full-stack subscription management application that helps users track recurring expenses, renewal dates, categories, and subscription status from a single dashboard.
+A full-stack subscription management application that helps users track recurring expenses, renewal dates, subscription status, and category-wise spending from a single dashboard.
+
+The application also sends automatic email reminders before upcoming renewals.
 
 ## Features
 
@@ -8,7 +10,9 @@ A full-stack subscription management application that helps users track recurrin
 - Password hashing with bcrypt
 - JWT-based authentication
 - Protected frontend and backend routes
-- Add, edit, delete, cancel, and reactivate subscriptions
+- User-specific subscription data
+- Add, view, edit, and delete subscriptions
+- Mark subscriptions as active or cancelled
 - Monthly spending calculation
 - Active subscription count
 - Upcoming renewal tracking
@@ -16,8 +20,9 @@ A full-stack subscription management application that helps users track recurrin
 - Search by subscription name
 - Filter by category and status
 - Category-wise spending chart
+- Automatic email renewal reminders
+- Duplicate reminder-email protection
 - Responsive user interface
-- User-specific data protection
 
 ## Tech Stack
 
@@ -35,6 +40,8 @@ A full-stack subscription management application that helps users track recurrin
 - Express.js
 - JSON Web Token
 - bcrypt
+- Nodemailer
+- node-cron
 
 ### Database
 
@@ -54,8 +61,15 @@ sub-tracker/
 │   │   └── main.jsx
 │   └── package.json
 ├── server/
+│   ├── jobs/
+│   │   └── reminderJob.js
 │   ├── middleware/
+│   │   └── auth.js
 │   ├── routes/
+│   │   ├── subscriptions.js
+│   │   └── users.js
+│   ├── services/
+│   │   └── emailService.js
 │   ├── .env.example
 │   ├── db.js
 │   ├── server.js
@@ -69,7 +83,7 @@ sub-tracker/
 ### 1. Clone the repository
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/subscription-tracker.git
+git clone https://github.com/Aryannnn11/subscription-tracker.git
 cd subscription-tracker
 ```
 
@@ -103,11 +117,12 @@ CREATE TABLE subscriptions (
   category VARCHAR(100) NOT NULL,
   status VARCHAR(20) DEFAULT 'Active'
     CHECK (status IN ('Active', 'Cancelled')),
+  reminder_sent_for_date DATE,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 ```
 
-### 3. Configure and run the backend
+### 3. Configure the backend
 
 ```bash
 cd server
@@ -124,7 +139,13 @@ DB_NAME=subscription_tracker
 DB_PASSWORD=your_postgresql_password
 DB_PORT=5432
 JWT_SECRET=your_secure_jwt_secret
+
+EMAIL_USER=your_email@gmail.com
+EMAIL_APP_PASSWORD=your_gmail_app_password
+REMINDER_DAYS=3
 ```
+
+The Gmail App Password requires 2-Step Verification. Never use your normal Gmail password.
 
 Start the backend:
 
@@ -138,7 +159,7 @@ The API runs at:
 http://localhost:5000
 ```
 
-### 4. Configure and run the frontend
+### 4. Configure the frontend
 
 Open another terminal:
 
@@ -153,6 +174,16 @@ The frontend runs at:
 ```text
 http://localhost:5173
 ```
+
+## Email Reminder Workflow
+
+1. The backend scheduler runs every day at 9:00 AM IST.
+2. It finds active subscriptions renewing after the configured number of days.
+3. A formatted reminder email is sent to the registered user.
+4. The renewal date is recorded in `reminder_sent_for_date`.
+5. The same reminder cannot be sent twice for one renewal date.
+
+The reminder scheduler only runs while the backend server is active.
 
 ## API Endpoints
 
@@ -180,14 +211,16 @@ http://localhost:5173
 - Protected routes require a valid JWT.
 - Database queries use parameterized SQL.
 - Users can only access and modify their own subscriptions.
-- Credentials and secrets are excluded from Git.
+- Email credentials and database secrets are stored in environment variables.
+- Secret files are excluded from Git.
+- Reminder emails include duplicate-send protection.
 
 ## Future Improvements
 
-- Email renewal reminders
 - Password reset
-- Automated tests
+- Automated testing
 - Cloud deployment
+- OAuth authentication
 
 ## Author
 
