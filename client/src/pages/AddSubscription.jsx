@@ -1,5 +1,8 @@
+
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+
+const API_URL = import.meta.env.VITE_API_URL;
 
 function AddSubscription() {
   const [formData, setFormData] = useState({
@@ -29,10 +32,14 @@ function AddSubscription() {
     try {
       setLoading(true);
 
+      if (!API_URL) {
+        throw new Error("API URL is not configured");
+      }
+
       const token = localStorage.getItem("token");
 
       const response = await fetch(
-        "http://localhost:5000/api/subscriptions",
+        `${API_URL.replace(/\/+$/, "")}/api/subscriptions`,
         {
           method: "POST",
           headers: {
@@ -52,7 +59,12 @@ function AddSubscription() {
         return;
       }
 
-      setMessage(data.message);
+      setMessage(
+        data.message ||
+          (response.ok
+            ? "Subscription saved successfully"
+            : "Could not save subscription")
+      );
 
       if (response.ok) {
         setTimeout(() => {
@@ -60,7 +72,13 @@ function AddSubscription() {
         }, 1000);
       }
     } catch (error) {
-      setMessage("Could not connect to the server");
+      console.error("Add subscription error:", error);
+
+      setMessage(
+        error.message === "API URL is not configured"
+          ? "Server configuration is missing"
+          : "Could not connect to the server"
+      );
     } finally {
       setLoading(false);
     }
