@@ -1,5 +1,8 @@
+
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+
+const API_URL = import.meta.env.VITE_API_URL;
 
 function Login() {
   const [email, setEmail] = useState("");
@@ -16,8 +19,12 @@ function Login() {
     try {
       setLoading(true);
 
+      if (!API_URL) {
+        throw new Error("API URL is not configured");
+      }
+
       const response = await fetch(
-        "http://localhost:5000/api/users/login",
+        `${API_URL.replace(/\/+$/, "")}/api/users/login`,
         {
           method: "POST",
           headers: {
@@ -33,7 +40,7 @@ function Login() {
       const data = await response.json();
 
       if (!response.ok) {
-        setMessage(data.message);
+        setMessage(data.message || "Login failed");
         return;
       }
 
@@ -42,7 +49,12 @@ function Login() {
 
       navigate("/dashboard");
     } catch (error) {
-      setMessage("Could not connect to the server");
+      console.error("Login error:", error);
+      setMessage(
+        error.message === "API URL is not configured"
+          ? "Server configuration is missing"
+          : "Could not connect to the server"
+      );
     } finally {
       setLoading(false);
     }
