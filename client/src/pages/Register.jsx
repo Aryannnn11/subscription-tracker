@@ -1,5 +1,8 @@
+
 import { useState } from "react";
 import { Link } from "react-router-dom";
+
+const API_URL = import.meta.env.VITE_API_URL;
 
 function Register() {
   const [formData, setFormData] = useState({
@@ -31,8 +34,12 @@ function Register() {
     try {
       setLoading(true);
 
+      if (!API_URL) {
+        throw new Error("API URL is not configured");
+      }
+
       const response = await fetch(
-        "http://localhost:5000/api/users/register",
+        `${API_URL.replace(/\/+$/, "")}/api/users/register`,
         {
           method: "POST",
           headers: {
@@ -47,7 +54,10 @@ function Register() {
       );
 
       const data = await response.json();
-      setMessage(data.message);
+
+      setMessage(data.message || (response.ok
+        ? "Account created successfully"
+        : "Registration failed"));
 
       if (response.ok) {
         setFormData({
@@ -58,7 +68,13 @@ function Register() {
         });
       }
     } catch (error) {
-      setMessage("Could not connect to the server");
+      console.error("Registration error:", error);
+
+      setMessage(
+        error.message === "API URL is not configured"
+          ? "Server configuration is missing"
+          : "Could not connect to the server"
+      );
     } finally {
       setLoading(false);
     }
