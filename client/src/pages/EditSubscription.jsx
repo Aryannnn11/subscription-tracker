@@ -1,5 +1,8 @@
+
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+
+const API_URL = import.meta.env.VITE_API_URL;
 
 function EditSubscription() {
   const [formData, setFormData] = useState({
@@ -20,10 +23,14 @@ function EditSubscription() {
   useEffect(() => {
     const fetchSubscription = async () => {
       try {
+        if (!API_URL) {
+          throw new Error("API URL is not configured");
+        }
+
         const token = localStorage.getItem("token");
 
         const response = await fetch(
-          `http://localhost:5000/api/subscriptions/${id}`,
+          `${API_URL.replace(/\/+$/, "")}/api/subscriptions/${id}`,
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -41,7 +48,7 @@ function EditSubscription() {
         }
 
         if (!response.ok) {
-          setMessage(data.message);
+          setMessage(data.message || "Could not load subscription");
           return;
         }
 
@@ -53,7 +60,13 @@ function EditSubscription() {
           category: data.subscription.category,
         });
       } catch (error) {
-        setMessage("Could not connect to the server");
+        console.error("Fetch subscription error:", error);
+
+        setMessage(
+          error.message === "API URL is not configured"
+            ? "Server configuration is missing"
+            : "Could not connect to the server"
+        );
       } finally {
         setLoading(false);
       }
@@ -76,10 +89,14 @@ function EditSubscription() {
     try {
       setSaving(true);
 
+      if (!API_URL) {
+        throw new Error("API URL is not configured");
+      }
+
       const token = localStorage.getItem("token");
 
       const response = await fetch(
-        `http://localhost:5000/api/subscriptions/${id}`,
+        `${API_URL.replace(/\/+$/, "")}/api/subscriptions/${id}`,
         {
           method: "PUT",
           headers: {
@@ -99,7 +116,12 @@ function EditSubscription() {
         return;
       }
 
-      setMessage(data.message);
+      setMessage(
+        data.message ||
+          (response.ok
+            ? "Subscription updated successfully"
+            : "Could not update subscription")
+      );
 
       if (response.ok) {
         setTimeout(() => {
@@ -107,7 +129,13 @@ function EditSubscription() {
         }, 1000);
       }
     } catch (error) {
-      setMessage("Could not connect to the server");
+      console.error("Update subscription error:", error);
+
+      setMessage(
+        error.message === "API URL is not configured"
+          ? "Server configuration is missing"
+          : "Could not connect to the server"
+      );
     } finally {
       setSaving(false);
     }
