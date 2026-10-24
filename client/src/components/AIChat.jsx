@@ -7,172 +7,67 @@ function AIChat() {
   const [answer, setAnswer] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const cleanText = (text) => {
-    return text
-      .replace(/\*\*/g, "")
-      .replace(/__/g, "")
-      .trim();
-  };
-
   const formatAnswer = (text) => {
-    if (!text) {
-      return null;
-    }
+    if (!text) return null;
 
     const lines = text
       .split("\n")
-      .map((line) => cleanText(line))
-      .filter((line) => line.length > 0);
+      .map((line) => line.replace(/\*\*/g, "").replace(/__/g, "").trim())
+      .filter(Boolean);
 
-    return lines.map((line, index) => {
-      /*
-       * Detect common section headings dynamically.
-       */
-      const headingPatterns = [
-        "Monthly Spending",
-        "Subscription Breakdown",
-        "Upcoming Renewals",
-        "Highest Cost Subscription",
-        "Recommendations",
-        "Tips",
-        "Summary",
-        "Monthly Cost",
-        "Yearly Cost",
-      ];
+    // Keep subscription names and prices together when AI splits them.
+    const items = [];
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i];
+      const next = lines[i + 1] || "";
+      if (/^[•*\-]\s*[^₹]+$/.test(line) && /^₹[\d,]+/.test(next)) {
+        items.push(line + " — " + next);
+        i++;
+      } else {
+        items.push(line);
+      }
+    }
 
-      const isHeading = headingPatterns.some(
-        (heading) =>
-          line.toLowerCase() === heading.toLowerCase()
-      );
+    return items.map((line, index) => {
+      const bullet = /^[•*\-]\s*/.test(line);
+      const content = line.replace(/^[•*\-]\s*/, "").trim();
+      const isHeading = !bullet && !content.includes("₹") &&
+        /^(monthly (subscription )?spending|subscription breakdown|upcoming renewals|highest.cost subscription|recommendations|tips|summary|monthly cost|yearly cost)$/i.test(content);
 
       if (isHeading) {
+        return <h4 className="ai-section-title" key={index}>{content}</h4>;
+      }
+
+      const amount = content.match(/₹[\d,]+(?:\.\d{1,2})?/);
+      if (bullet && content.includes(" — ₹")) {
+        const [name, ...details] = content.split(" — ");
         return (
-          <div className="ai-section-title" key={index}>
-            {line}
+          <div className="ai-subscription-item" key={index}>
+            <span className="ai-item-name">{name}</span>
+            <strong>{details.join(" — ")}</strong>
           </div>
         );
       }
 
-      /*
-       * Handle lines such as:
-       *
-       * Total Monthly Spending ₹3,347.00
-       *
-       * or:
-       *
-       * Total Monthly Spending: ₹3,347.00
-       */
-      if (
-        line.toLowerCase().includes("total monthly spending")
-      ) {
-        const amountMatch = line.match(/₹[\d,]+(?:\.\d{1,2})?/);
-
-        return (
-          <div className="ai-total-card" key={index}>
-            <div className="ai-total-label">
-              Total Monthly Spending
-            </div>
-
-            {amountMatch && (
-              <div className="ai-total-amount">
-                {amountMatch[0]}
-              </div>
-            )}
-          </div>
-        );
-      }
-
-      /*
-       * Handle highest-cost subscription.
-       */
-      if (
-        line
-          .toLowerCase()
-          .includes("highest-cost subscription")
-      ) {
-        const amountMatch = line.match(
-          /₹[\d,]+(?:\.\d{1,2})?/
-        );
-
-        const withoutLabel = line
-          .replace(
-            /highest-cost subscription/i,
-            ""
-          )
-          .replace(/₹[\d,]+(?:\.\d{1,2})?/, "")
-          .replace(/[:\-–]/g, "")
-          .trim();
-
-        return (
-          <div className="ai-highlight-card" key={index}>
-            <div className="ai-highlight-label">
-              Highest Cost Subscription
-            </div>
-
-            <div className="ai-highlight-content">
-              <span>{withoutLabel}</span>
-
-              {amountMatch && (
-                <strong>
-                  {amountMatch[0]}
-                </strong>
-              )}
-            </div>
-          </div>
-        );
-      }
-
-      /*
-       * Handle bullet points.
-       */
-      if (
-        line.startsWith("•") ||
-        line.startsWith("-")
-      ) {
-        const content = line
-          .replace(/^•\s*/, "")
-          .replace(/^-\s*/, "")
-          .trim();
-
-        const separatorMatch = content.match(
-          /^(.+?)\s+[—–-]\s+(₹[\d,]+(?:\.\d{1,2})?.*)$/
-        );
-
-        if (separatorMatch) {
-          return (
-            <div className="ai-subscription-item" key={index}>
-              <div className="ai-item-name">
-                <span className="ai-dot">•</span>
-
-                <span>
-                  {separatorMatch[1].trim()}
-                </span>
-              </div>
-
-              <strong>
-                {separatorMatch[2].trim()}
-              </strong>
-            </div>
-          );
-        }
-
+      if (bullet) {
         return (
           <div className="ai-bullet-item" key={index}>
             <span className="ai-dot">•</span>
-
             <span>{content}</span>
           </div>
         );
       }
 
-      /*
-       * Normal response text.
-       */
-      return (
-        <p className="ai-text" key={index}>
-          {line}
-        </p>
-      );
+      if (amount && /^(total|total monthly spending|monthly spending)\s*:/i.test(content)) {
+        return (
+          <div className="ai-total-card" key={index}>
+            <span className="ai-total-label">Monthly spending</span>
+            <strong className="ai-total-amount">{amount[0]}</strong>
+          </div>
+        );
+      }
+
+      return <p className="ai-text" key={index}>{content}</p>;
     });
   };
 
