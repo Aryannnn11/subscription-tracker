@@ -1,5 +1,7 @@
 import { useState } from "react";
 
+const API_URL = import.meta.env.VITE_API_URL?.replace(/\/+$/, "");
+
 function AIChat() {
   const [question, setQuestion] = useState("");
   const [answer, setAnswer] = useState("");
@@ -188,7 +190,7 @@ function AIChat() {
       const token = localStorage.getItem("token");
 
       const response = await fetch(
-        "http://localhost:5000/api/ai/chat",
+        `${API_URL}/api/ai/chat`,
         {
           method: "POST",
           headers: {
