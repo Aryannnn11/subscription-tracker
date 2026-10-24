@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import AIChat from "../components/AIChat";
 import {
   Bar,
   BarChart,
@@ -468,6 +469,7 @@ function Dashboard() {
           );
         })
       )}
+      <AIChat />
     </div>
   );
 }
