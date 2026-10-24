@@ -10,35 +10,68 @@ function AIChat() {
   const formatAnswer = (text) => {
     if (!text) return null;
 
+    // Groq may return "₹2 718" or "₹2,718". Preserve the entire amount.
+    const normalizeCurrency = (value) =>
+      value.replace(/₹\s*\d[\d,\s]*(?:\.\d{1,2})?/g, (match) =>
+        match.replace(/\s+/g, "").replace(/^₹/, "₹")
+      );
+
     const lines = text
       .split("\n")
-      .map((line) => line.replace(/\*\*/g, "").replace(/__/g, "").trim())
+      .map((line) =>
+        normalizeCurrency(line.replace(/\*\*/g, "").replace(/__/g, "").trim())
+      )
       .filter(Boolean);
 
-    // Keep subscription names and prices together when AI splits them.
     const items = [];
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i];
       const next = lines[i + 1] || "";
-      if (/^[•*\-]\s*[^₹]+$/.test(line) && /^₹[\d,]+/.test(next)) {
-        items.push(line + " — " + next);
+
+      // Handle "Total Monthly Spending" followed by an amount on the next line.
+      if (/^(total monthly spending|total spending|monthly spending)\s*:?\s*$/i.test(line) &&
+          /^₹[\d,]+(?:\.\d{1,2})?/.test(next)) {
+        items.push({ kind: "total", label: line.replace(/:$/, ""), value: next });
+        i++;
+      } else if (/^[•*\-]\s*[^₹]+$/.test(line) &&
+                 /^₹[\d,]+/.test(next)) {
+        items.push({ kind: "subscription", value: line + " — " + next });
         i++;
       } else {
-        items.push(line);
+        items.push({ kind: "line", value: line });
       }
     }
 
-    return items.map((line, index) => {
+    return items.map((item, index) => {
+      if (item.kind === "total") {
+        return (
+          <div className="ai-total-card" key={index}>
+            <span className="ai-total-label">{item.label}</span>
+            <strong className="ai-total-amount">{item.value}</strong>
+          </div>
+        );
+      }
+
+      const line = item.value;
       const bullet = /^[•*\-]\s*/.test(line);
       const content = line.replace(/^[•*\-]\s*/, "").trim();
       const isHeading = !bullet && !content.includes("₹") &&
-        /^(monthly (subscription )?spending|subscription breakdown|upcoming renewals|highest.cost subscription|recommendations|tips|summary|monthly cost|yearly cost)$/i.test(content);
+        /^(monthly (subscription )?spending|subscription breakdown|upcoming renewals|highest.cost subscription|recommendations|tips|summary|monthly cost|yearly cost|total monthly spending)$/i.test(content);
 
       if (isHeading) {
         return <h4 className="ai-section-title" key={index}>{content}</h4>;
       }
 
-      const amount = content.match(/₹[\d,]+(?:\.\d{1,2})?/);
+      const totalMatch = content.match(/^(total|total monthly spending|monthly spending)\s*:?\s*(₹[\d,]+(?:\.\d{1,2})?)/i);
+      if (!bullet && totalMatch) {
+        return (
+          <div className="ai-total-card" key={index}>
+            <span className="ai-total-label">{totalMatch[1]}</span>
+            <strong className="ai-total-amount">{totalMatch[2]}</strong>
+          </div>
+        );
+      }
+
       if (bullet && content.includes(" — ₹")) {
         const [name, ...details] = content.split(" — ");
         return (
@@ -54,15 +87,6 @@ function AIChat() {
           <div className="ai-bullet-item" key={index}>
             <span className="ai-dot">•</span>
             <span>{content}</span>
-          </div>
-        );
-      }
-
-      if (amount && /^(total|total monthly spending|monthly spending)\s*:/i.test(content)) {
-        return (
-          <div className="ai-total-card" key={index}>
-            <span className="ai-total-label">Monthly spending</span>
-            <strong className="ai-total-amount">{amount[0]}</strong>
           </div>
         );
       }
