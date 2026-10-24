@@ -5,6 +5,7 @@ require("dotenv").config();
 const pool = require("./db");
 const userRoutes = require("./routes/users");
 const subscriptionRoutes = require("./routes/subscriptions");
+const aiRoutes = require("./routes/ai");
 const {
   startReminderJob,
 } = require("./jobs/reminderJob");
@@ -16,6 +17,7 @@ app.use(express.json());
 
 app.use("/api/users", userRoutes);
 app.use("/api/subscriptions", subscriptionRoutes);
+app.use("/api/ai", aiRoutes);
 
 app.get("/", (req, res) => {
   res.json({
