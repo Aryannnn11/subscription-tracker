@@ -10,11 +10,16 @@ function AIChat() {
   const formatAnswer = (text) => {
     if (!text) return null;
 
-    // Groq may return "₹2 718" or "₹2,718". Preserve the entire amount.
+    // Format whole amounts with Indian digit grouping without swallowing
+    // the space before words such as "per year".
     const normalizeCurrency = (value) =>
-      value.replace(/₹\s*\d[\d,\s]*(?:\.\d{1,2})?/g, (match) =>
-        match.replace(/\s+/g, "").replace(/^₹/, "₹")
-      );
+      value
+        .replace(/₹\s*(\d+(?:(?:[ ,]\d{3})+|\d*)(?:\.\d{1,2})?)/g, (_match, digits) =>
+          "₹" + Number(digits.replace(/[ ,]/g, "")).toLocaleString("en-IN", {
+            maximumFractionDigits: 2,
+          })
+        )
+        .replace(/(₹[\d,]+(?:\.\d{1,2})?)(?=(?:per\b|yearly\b|monthly\b))/gi, "$1 ");
 
     const lines = text
       .split("\n")
@@ -56,7 +61,7 @@ function AIChat() {
       const bullet = /^[•*\-]\s*/.test(line);
       const content = line.replace(/^[•*\-]\s*/, "").trim();
       const isHeading = !bullet && !content.includes("₹") &&
-        /^(monthly (subscription )?spending|subscription breakdown|upcoming renewals|highest.cost subscription|recommendations|tips|summary|monthly cost|yearly cost|total monthly spending)$/i.test(content);
+        /^(monthly (subscription )?spending|yearly (subscription )?spending|subscription breakdown|breakdown by subscription|active subscriptions|upcoming renewals|highest.cost subscription|recommendations|tips|summary|monthly cost|yearly cost|total monthly spending)$/i.test(content);
 
       if (isHeading) {
         return <h4 className="ai-section-title" key={index}>{content}</h4>;
