@@ -10,15 +10,17 @@ function AIChat() {
   const formatAnswer = (text) => {
     if (!text) return null;
 
-    // Format whole amounts with Indian digit grouping without swallowing
-    // the space before words such as "per year".
+    // Display-only formatting: preserve the AI's numeric values while
+    // consistently grouping rupee amounts (including spaced amounts).
     const normalizeCurrency = (value) =>
       value
-        .replace(/₹\s*(\d+(?:(?:[ ,]\d{3})+|\d*)(?:\.\d{1,2})?)/g, (_match, digits) =>
-          "₹" + Number(digits.replace(/[ ,]/g, "")).toLocaleString("en-IN", {
-            maximumFractionDigits: 2,
-          })
-        )
+        .replace(/₹[ \t]*([0-9][0-9,\u00a0 ]*(?:\.[0-9]{1,2})?)/g, (full, raw) => {
+          const digits = raw.trim().replace(/[,\s\u00a0]/g, "");
+          if (!/^\d+(?:\.\d{1,2})?$/.test(digits)) return full;
+          const [integer, decimal] = digits.split(".");
+          const formatted = BigInt(integer).toLocaleString("en-IN");
+          return "₹" + formatted + (decimal ? "." + decimal : "");
+        })
         .replace(/(₹[\d,]+(?:\.\d{1,2})?)(?=(?:per\b|yearly\b|monthly\b))/gi, "$1 ");
 
     const lines = text
