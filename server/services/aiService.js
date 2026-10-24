@@ -1,5 +1,3 @@
-const OpenAI = require("openai");
-
 const {
   getSubscriptionSummary,
   getUpcomingRenewals,
@@ -7,10 +5,33 @@ const {
   getSpendingByCategory,
 } = require("./subscriptionTools");
 
-const client = new OpenAI({
-  apiKey: process.env.GROQ_API_KEY,
-  baseURL: "https://api.groq.com/openai/v1",
-});
+// Use the built-in fetch API (Node.js 18+) to avoid an uninstalled SDK dependency.
+const client = {
+  chat: {
+    completions: {
+      create: async (payload) => {
+        if (!process.env.GROQ_API_KEY) {
+          throw new Error("GROQ_API_KEY is not configured");
+        }
+
+        const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${process.env.GROQ_API_KEY}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(payload),
+        });
+
+        const data = await response.json();
+        if (!response.ok) {
+          throw new Error(data.error?.message || "Groq API request failed");
+        }
+        return data;
+      },
+    },
+  },
+};
 
 // =========================
 // AVAILABLE AI TOOLS
