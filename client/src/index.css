@@ -223,3 +223,37 @@ p {
     margin-right: 0;
   }
 }
+
+/* AI assistant: scoped styles; existing dashboard styling is unchanged. */
+.ai-container {
+  margin-top: 28px;
+  padding: 22px;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  background: #f8fafc;
+}
+.ai-container .ai-header h2 { margin: 0 0 8px; text-align: left; }
+.ai-container .ai-header p { margin: 0 0 18px; text-align: left; color: #64748b; }
+.ai-container .ai-form { display: grid; gap: 12px; }
+.ai-container .ai-response { margin-top: 20px; padding: 20px; background: #fff; border: 1px solid #e2e8f0; border-radius: 14px; }
+.ai-container .ai-response-header { display: flex; align-items: center; gap: 12px; margin-bottom: 18px; }
+.ai-container .ai-response-header h3 { margin: 0 0 4px; color: #334155; }
+.ai-container .ai-response-header span { color: #64748b; font-size: .875rem; }
+.ai-container .ai-response-avatar { font-size: 1.4rem; color: #4f46e5; }
+.ai-container .ai-response-content { display: grid; gap: 12px; }
+.ai-container .ai-response-content .ai-section-title { margin: 8px 0 0; color: #334155; font-size: 1.05rem; }
+.ai-container .ai-response-content .ai-text { margin: 0; color: #334155; text-align: left; font-size: .95rem; font-weight: 400; line-height: 1.6; }
+.ai-container .ai-bullet-item { display: flex; align-items: flex-start; gap: 10px; color: #334155; line-height: 1.5; }
+.ai-container .ai-dot { color: #6366f1; flex-shrink: 0; }
+.ai-container .ai-subscription-item { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; padding: 12px 14px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; }
+.ai-container .ai-subscription-item .ai-item-name { font-weight: 600; text-transform: capitalize; }
+.ai-container .ai-subscription-item strong { text-align: right; font-size: .9rem; }
+.ai-container .ai-total-card { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 16px; border-radius: 12px; background: #eef2ff; }
+.ai-container .ai-total-label { color: #4338ca; font-weight: 600; }
+.ai-container .ai-total-amount { color: #312e81; font-size: 1.35rem; }
+.ai-container .ai-loading { padding: 12px 0; color: #64748b; }
+@media (max-width: 600px) {
+  .ai-container { padding: 14px; }
+  .ai-container .ai-subscription-item, .ai-container .ai-total-card { flex-direction: column; align-items: flex-start; }
+  .ai-container .ai-subscription-item strong { text-align: left; }
+}
